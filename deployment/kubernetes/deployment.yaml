@@ -1,0 +1,50 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bigdata-api-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: bigdata-api
+  template:
+    metadata:
+      labels:
+        app: bigdata-api
+    spec:
+      containers:
+        - name: api
+          image: bigdata-api:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8000
+          env:
+            - name: DATABASE_URL
+              value: "postgresql://postgres:postgres@bigdata-postgres:5432/bigdata_db"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bigdata-postgres-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: bigdata-postgres
+  template:
+    metadata:
+      labels:
+        app: bigdata-postgres
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:15
+          ports:
+            - containerPort: 5432
+          env:
+            - name: POSTGRES_DB
+              value: "bigdata_db"
+            - name: POSTGRES_USER
+              value: "postgres"
+            - name: POSTGRES_PASSWORD
+              value: "postgres"
