@@ -1,0 +1,7 @@
+*.csv
+*.xlsx
+*.zip
+*.bak
+*.db
+venv/
+venv/
