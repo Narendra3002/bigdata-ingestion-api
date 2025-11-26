@@ -5,3 +5,11 @@
 *.db
 venv/
 venv/
+venv/
+data/
+*.csv
+*.xlsx
+*.tsv
+*.zip
+*.bak
+__pycache__/
