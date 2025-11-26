@@ -1,0 +1,10 @@
+[
+  {
+    "user_id": 1,
+    "endpoint": "/contacts",
+    "query_params": {"country": "USA", "page": 1},
+    "credits_used": 10,
+    "response_time_ms": 17194,
+    "called_at": "2025-11-26T08:33:00"
+  }
+]
