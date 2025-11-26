@@ -1,124 +1,113 @@
-# 📘 API Specification — Credit‑Based Big Data Contact API
+# 📘 Credit System Documentation — Big Data API
 
-Base URL:
-http://127.0.0.1:8000
+## 1. Overview
+The system uses a **credit‑based access model** to control how many API requests a user can make.
 
+Every user has:
+- A unique API key  
+- A credit balance  
+- A complete usage log  
+
+When credits reach **0**, the API blocks further access.
 
 ---
 
-# 1. Authentication
+## 2. Database Tables
 
-Every request must include an API Key in headers:
-api_key: YOUR_API_KEY
+### 🟦 users
+Stores user details + API Key.
 
-If invalid → API returns:
+| Column | Type | Description |
+|--------|------|-------------|
+| id     | int  | Primary key |
+| name   | text | User name |
+| api_key | text | Secret API key |
 
+---
+
+### 🟩 credits
+Stores credit balance for each user.
+
+| Column | Type | Description |
+|--------|------|-------------|
+| user_id | int | Linked to users.id |
+| credits_left | int | Number of credits remaining |
+
+---
+
+### 🟧 api_logs
+Stores every API call.
+
+| Column | Type | Description |
+|--------|------|-------------|
+| id | int | Primary key |
+| user_id | int | Caller | 
+| endpoint | text | Endpoint accessed |
+| query_params | jsonb | Filters used |
+| credits_used | int | Credits deducted |
+| response_time_ms | int | API latency |
+| called_at | timestamp | Time of call |
+
+---
+
+## 3. How Credits Are Deducted
+
+### Contacts API Rule:
+credits_used = number_of_items_returned
+
+
+Examples:
+- page_size=10 → costs 10 credits  
+- page_size=50 → costs 50 credits  
+
+### Protected Endpoint Rule:
+credits_used = 1
+
+
+### When credits become zero:
 ```json
-{"error": "Invalid API Key"}
-2. Endpoints
-2.1 Health Check Endpoint
-GET /
-Used to check if server is running
-Response
-{"message": "Big Data + Credit API System Running"}
-2.2 Protected Test Endpoint
-GET /protected
-Requires valid API Key
-
-Deducts 1 credit
-
-Response Example
-{
-  "message": "You accessed protected data!",
-  "user": "Test User",
-  "credits_left": 987
-}
-2.3 Contacts Search Endpoint
-GET /contacts
-Query Parameters:
-| Param     | Type | Required | Description              |
-| --------- | ---- | -------- | ------------------------ |
-| page      | int  | No       | Page number (default: 1) |
-| page_size | int  | No       | Items per page (1–200)   |
-| country   | str  | No       | Filter by country        |
-| email     | str  | No       | Filter by email          |
-| phone     | str  | No       | Filter by phone          |
-| company   | str  | No       | Filter by company        |
-Credits Rule
-Credits used = number of items returned
-
-Example:
-
-page_size=10 → 10 credits deducted
-
-page_size=50 → 50 credits deducted
-
-If credits insufficient:
 {"error": "Insufficient Credits"}
-Response Example
-{
-  "page": 1,
-  "page_size": 10,
-  "total": 1014052,
-  "credits_used": 10,
-  "credits_left": 988,
-  "items": [
-    {
-      "id": 1636213,
-      "email": "jlancaster@atmel.com",
-      "phone": "408-441-0311",
-      "country": "USA",
-      "company": "Atmel Corp",
-      "job_title": null
-    }
-  ]
-}
-3. Errors
-Invalid API Key:
-{"error": "Invalid API Key"}
-Missing API Key:
-{"error": "API Key Required"}
-Not Enough Credits:
-{"error": "Insufficient Credits"}
-4. API Logging
-Every API call is logged in api_logs:
+4. Admin Credit Management
+Admin can add credits using SQL:
 
-Fields stored:
+UPDATE credits
+SET credits_left = credits_left + 500
+WHERE user_id = 1;
+Set initial credits:
 
-user_id
+INSERT INTO credits (user_id, credits_left)
+VALUES (1, 1000);
+5. Logging & Auditing
+Admins can monitor usage:
 
-endpoint
+SELECT * FROM api_logs ORDER BY id DESC LIMIT 20;
+This helps:
 
-query_params
+billing
 
-credits_used
+fraud detection
 
-response_time_ms
+usage analytics
 
-called_at
+performance tracking
 
-Sample query:
+6. Future Credit Features (Optional)
+Daily credit refill
 
-SELECT * FROM api_logs ORDER BY id DESC LIMIT 5;
-5. Rate Limit (Optional Future Enhancement)
-Max 60 requests/min per user
+Tiered pricing
 
-Additional rules for high‑tier users
+Rate limiting
+
+Credit usage dashboard
 
 
 ---
 
-# 👉 **NEXT STEP FOR YOU**
+# ✅ **NOW DO THIS:**
 
-1. Open the file:
-docs/api/api-spec.md
-
-
-2. Paste the full content above  
-3. Save  
-4. Run:
+After pasting, run:
 
 ```bash
-git add docs/api/api-spec.md
-git commit -m "Add API specification documentation"
+git add docs/credit/credit-system.md
+git commit -m "Add credit system documentation"
 git push
