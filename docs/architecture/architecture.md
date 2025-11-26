@@ -2,11 +2,12 @@
 
 ## 1. Overview
 This architecture supports:
-- Ingestion of 70M–700M+ records from multiple formats
-- Schema normalization and deduplication
-- Scalable storage using PostgreSQL
-- Fast credit‑regulated API using FastAPI
-- API logging, authentication, pagination, and filtering
+- Ingestion of **70M–700M+** records from multiple formats  
+- Schema normalization and deduplication  
+- Scalable storage using PostgreSQL  
+- Fast credit‑regulated API using FastAPI  
+- API logging, authentication, pagination, and filtering  
+- Support for future scale-up to distributed systems  
 
 ---
 
@@ -38,8 +39,8 @@ This architecture supports:
   │         API Layer (FastAPI + SQLAlchemy)     │
   │  - API Key authentication                    │
   │  - Credit deduction per request              │
-  │  - Filtering (country, name, domain, etc.)   │
-  │  - Pagination                                │
+  │  - Filtering (country, email, company, etc.) │
+  │  - Pagination & metadata                     │
   └──────────┬───────────────────────────────────┘
              │
              ▼
@@ -54,51 +55,78 @@ This architecture supports:
 ## 3. Ingestion Architecture
 
 ### Responsibilities:
-✔ Multi‑format ingestion (CSV, Excel, JSON, TSV)  
-✔ Schema normalization into common fields  
-✔ Duplicate removal using `(email, phone)`  
-✔ Batch insert into PostgreSQL
+✔ Load multi-format data (CSV, Excel, TSV, JSON, JSONL)  
+✔ Detect & normalize schemas  
+✔ Clean malformed rows  
+✔ Convert to unified master schema  
+✔ Remove duplicates `(email, phone)`  
+✔ Batch insert into PostgreSQL using COPY  
 
-### Tools:
-- Python
-- Pandas
-- Custom schema mapping
-- PostgreSQL COPY for large inserts
+### Tools Used:
+- Python  
+- Pandas  
+- Custom normalization functions  
+- SQLAlchemy  
+- PostgreSQL COPY command for fast batching  
 
 ---
 
 ## 4. Storage Architecture
 
-### Database: PostgreSQL
+### Database: PostgreSQL  
+Chosen because it supports large datasets, indexing, partitioning, and fast queries.
 
-Tables:
+### Tables:
 - `contacts_master`
 - `users`
 - `credits`
 - `api_logs`
 
-Indexes:
+### Recommended Indexes:
 ```sql
 CREATE INDEX idx_country ON contacts_master(country);
 CREATE INDEX idx_email ON contacts_master(email);
 CREATE INDEX idx_phone ON contacts_master(phone);
+Scaling Strategy:
+Add read replicas when traffic grows
+
+Partition contacts_master by country or ranges
+
+Consider Citus/PostgreSQL sharding for 500M+ rows
+
 5. API Architecture
 Framework: FastAPI
 
 Features:
+API Key authentication
 
-Authentication using API Key
-
-Credit deduction per request
+Credit usage deduction
 
 Pagination
 
-Filters: country, email, phone, company
+Dynamic filtering (country, email, phone, company)
 
-Response metadata
+Detailed response metadata
+
+SQLAlchemy ORM + connection pooling
+
+API Flow:
+Validate API Key
+
+Check credits
+
+Query dataset
+
+Deduct credits
+
+Log the call
+
+Return paginated result
 
 6. Logging Architecture
-api_logs stores:
+Logs stored in api_logs table:
+
+Each record includes:
 
 user_id
 
@@ -112,37 +140,70 @@ response_time_ms
 
 called_at
 
-Used for billing and analytics.
+Used for:
+
+Billing
+
+Analytics
+
+Fraud detection
+
+Performance monitoring
 
 7. Scalability Plan
-Horizontal scaling via read replicas
+Short-term:
+Add indexes
 
-PostgreSQL partitioning (range partition by country)
+Use connection pooling
 
-Redis caching for frequent queries
+Use Redis for frequent queries (optional)
 
-Sharding when dataset crosses 500M+
+Medium-term:
+PostgreSQL partitioning
+
+Task queues for ingestion (Celery / Redis)
+
+Long-term (700M+ records):
+Move to Citus, ClickHouse, or BigQuery
+
+Use S3-based data lake
+
+Spark/Flink for ingestion at scale
 
 8. Deployment Architecture
-Supports:
+Development:
+FastAPI
 
-Docker containers
+PostgreSQL (local)
 
-Docker Compose for local
+Docker optional
+
+Production:
+Docker Compose OR Kubernetes
 
 Nginx reverse proxy
 
-PostgreSQL container or managed DB
+SSL termination
+
+Load balancer
+
+Remote PostgreSQL instance
+
+9. Summary
+This architecture ensures:
+
+✔ Scalable ingestion
+✔ Clean unified schema
+✔ Fast search API
+✔ Credit-based usage control
+✔ Full logging and auditing
+✔ Expandable to 1 billion+ records
+
 
 ---
 
-# ✅ NEXT STEP (Important)
+If you want, I can resend **all other docs again** too.
 
-After pasting the content:
+Just tell me:  
+**“send next document”**
 
-### Run:
-
-```bash
-git add docs/architecture/architecture.md
-git commit -m "Added architecture.md content"
-git push
