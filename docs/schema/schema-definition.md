@@ -9,47 +9,57 @@
 | email        | TEXT     | Email address |
 | phone        | TEXT     | Phone number |
 | city         | TEXT     | City name |
-| state        | TEXT     | State name |
+| state        | TEXT     | State/Province |
 | country      | TEXT     | Country |
-| company      | TEXT     | Company name |
-| job_title    | TEXT     | Job title or profession |
+| company      | TEXT     | Company or Organization |
+| job_title    | TEXT     | Job title or designation |
 
 ---
 
-## 2. Schema Decisions (Normalization)
+## 2. Schema Normalization Rules
 
-### ✔ Master Schema Fields
-All incoming datasets are normalized into the following fields:
-- `person_name`
-- `email`
-- `phone`
-- `city`
-- `state`
-- `country`
-- `company`
-- `job_title`
+All incoming files (CSV, Excel, JSON, TSV) are mapped into a **unified schema**.
 
-### ✔ Duplicate Removal Strategy
-Duplicates are identified using:
-(email, phone)
+### Input Field Examples:
+- `Name`, `FullName`, `person`, `contact_name` → `person_name`
+- `E-mail`, `mail`, `emailAddress` → `email`
+- `mobile`, `contact_number`, `telephone` → `phone`
 
-If both are null → row is included but flagged with lower priority.
-
----
-
-## 3. Input Formats Supported
-
-| Format  | Handled By |
-|---------|------------|
-| CSV     | Pandas, Python CSV |
-| TSV     | Pandas `sep="\t"` |
-| Excel   | Pandas `read_excel` |
-| JSON    | `json` module / Pandas |
-| JSONL   | Line-by-line parser |
+### Standardized Output:
+person_name
+email
+phone
+city
+state
+country
+company
+job_title
 
 ---
 
-## 4. Example of Unified Record
+## 3. Duplicate Removal Strategy
+
+Duplicate rows are detected using:
+
+
+If both email & phone are NULL → record is kept (marked low confidence).
+
+---
+
+## 4. Supported Input Formats
+
+| Format  | Method Used |
+|---------|-------------|
+| CSV     | pandas.read_csv |
+| TSV     | pandas.read_csv (sep="\t") |
+| Excel   | pandas.read_excel |
+| JSON    | json module / pandas |
+| JSONL   | line-by-line parser |
+| SQL dump | custom import + regex parsing |
+
+---
+
+## 5. Example of Unified Record
 
 ```json
 {
@@ -63,39 +73,31 @@ If both are null → row is included but flagged with lower priority.
   "company": "Example Corp",
   "job_title": "Project Manager"
 }
-5. Ingestion Output Workflow
-Raw → Normalized → Deduped → Inserted
-| Stage      | File/Output           |
-| ---------- | --------------------- |
-| Raw Input  | raw_input.*           |
-| Normalized | normalized_output.csv |
-| Deduped    | unique_contacts.csv   |
-| Database   | contacts_master table |
-6. Database Indexes
+6. Output Pipeline Stages
+| Stage        | Description                     |
+| ------------ | ------------------------------- |
+| Raw Input    | Original file from dataset      |
+| Normalized   | Unified field mapping completed |
+| Cleaned      | Bad rows fixed/removed          |
+| Deduped      | Duplicate records removed       |
+| Final Output | Inserted into `contacts_master` |
 CREATE INDEX idx_country ON contacts_master(country);
 CREATE INDEX idx_email ON contacts_master(email);
 CREATE INDEX idx_phone ON contacts_master(phone);
 CREATE INDEX idx_company ON contacts_master(company);
-Indexes drastically improve query performance when dataset size grows beyond 50M+ records.
-7. Future Expansion
-The schema supports:
+8. Future Schema Extensions
+hashed_email, hashed_phone (privacy)
 
-Adding hashed email/phone for privacy
+linkedin_url, domain, industry
 
-Adding more enrichment fields (LinkedIn, domain, etc.)
+enrichments from 3rd party APIs
 
-Partitioning by country for large datasets
 
 ---
 
-# 👉 **NEXT STEP FOR YOU**
-1. Open this file:
-
-2. Paste the full content above  
-3. Save  
-4. Then run:
+# 👉 **When pasted, run:**
 
 ```bash
 git add docs/schema/schema-definition.md
-git commit -m "Add schema-definition.md documentation"
+git commit -m "Add schema-definition.md"
 git push
